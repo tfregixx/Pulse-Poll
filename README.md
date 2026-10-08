@@ -70,10 +70,8 @@ Create a Redis database. Put its TCP host and port in `REDIS_ADDR`, its password
 ## Architecture decision
 MongoDB is authoritative. Redis is the fast live layer. A successful vote is first inserted into MongoDB, then the Redis hash is incremented, a snapshot is published, and connected WebSocket clients are updated. If Redis has lost its counters, the backend can rebuild them from MongoDB.
 
-## AI disclosure
-If AI helped you, state honestly where it helped. Review, test and understand every part before submission. Be ready to explain JWT, bcrypt, MongoDB indexes, Redis `HINCRBY`, Pub/Sub, WebSockets, reconnect behavior and duplicate-vote prevention.
 
-## Submission reminders
-The 3 to 5 minute video is mandatory. Show the deployed app, demonstrate a live update without refreshing, explain your hardest challenge, and disclose AI usage. Email the public GitHub link, live link and video link to `devhiring@hclguvi.com`.
+
+
 
 All the best.
