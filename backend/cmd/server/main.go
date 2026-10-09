@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"log"
 	"time"
 
@@ -27,13 +26,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	redisOptions := &redis.Options{Addr: cfg.RedisAddr, Password: cfg.RedisPassword}
-	if cfg.RedisTLS {
-		redisOptions.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	redisOptions, err := config.RedisOptionsFromEnv()
+	if err != nil {
+		log.Fatal(err)
 	}
 	rdb := redis.NewClient(redisOptions)
 	if err = rdb.Ping(ctx).Err(); err != nil {
-		log.Fatal(err)
+		log.Println("Redis Error:", err)
 	}
 	a := app.New(cfg, mc.Database(cfg.MongoDB), rdb)
 	if err = a.Indexes(ctx); err != nil {
