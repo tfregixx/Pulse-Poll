@@ -56,7 +56,7 @@ Create a Redis database. Put its TCP host and port in `REDIS_ADDR`, its password
 - Import the same repository.
 - Root directory: `frontend`
 - Framework: Vite
-- Add `VITE_API_URL=https://YOUR-BACKEND/api`
+- Add `VITE_API_URL=https://YOUR-BACKEND`
 - Add `VITE_WS_URL=wss://YOUR-BACKEND`
 - Deploy, then update backend `FRONTEND_URL` to the Vercel origin and redeploy backend.
 
