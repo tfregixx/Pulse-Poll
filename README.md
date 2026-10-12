@@ -74,4 +74,3 @@ MongoDB is authoritative. Redis is the fast live layer. A successful vote is fir
 
 
 
-All the best.
