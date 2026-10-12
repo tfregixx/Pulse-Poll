@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'react-qr-code';
 import { request } from './api';
 import './styles.css';
 import './theme.css';
@@ -142,14 +142,71 @@ function Analytics() {
   return <>
     <div className="page-heading"><div><p className="eyebrow">Performance</p><h1>Analytics</h1><p className="muted">Participation across your polls.</p></div></div>
     <section className="metric-grid">
-      <article className="metric"><span>Polls</span><strong>{data.totalPolls}</strong></article>
+      <article className="metric"><span>Total polls</span><strong>{data.totalPolls}</strong></article>
       <article className="metric"><span>Active polls</span><strong>{data.activePolls}</strong></article>
       <article className="metric"><span>Total votes</span><strong>{data.totalVotes}</strong></article>
-      <article className="metric"><span>Poll views</span><strong>{data.totalViews}</strong></article>
+      <article className="metric"><span>Total views</span><strong>{data.totalViews}</strong></article>
     </section>
     {chartData.length ? <section className="panel analytics-chart"><h2>Votes and views</h2><div className="chart"><ResponsiveContainer width="100%" height="100%"><BarChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 8 }}><CartesianGrid stroke="var(--line)" vertical={false} /><XAxis dataKey="name" tick={{ fill: 'var(--muted)', fontSize: 12 }} /><YAxis allowDecimals={false} tick={{ fill: 'var(--muted)', fontSize: 12 }} /><Tooltip /><Bar dataKey="votes" fill="#e35b3f" radius={[4, 4, 0, 0]} /><Bar dataKey="views" fill="#168b85" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div></section> : <section className="empty-state"><h2>Analytics will appear here</h2><p className="muted">Share a poll to start collecting views and votes.</p></section>}
     <section className="analytics-table"><h2>Poll performance</h2>{data.polls.map(poll => <Link className="analytics-row" to={`/poll/${poll.id}`} key={poll.id}><span>{poll.question}</span><span>{poll.totalVotes} votes</span><span>{poll.views} views</span><span className={`status ${poll.status}`}>{poll.status}</span></Link>)}</section>
   </>;
+}
+
+function SharePanel({ shareUrl, onCopy }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const qrRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnEscape = event => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isOpen]);
+
+  function downloadQr() {
+    const svg = qrRef.current?.querySelector('svg');
+    if (!svg) return;
+    const image = new XMLSerializer().serializeToString(svg);
+    const url = URL.createObjectURL(new Blob([image], { type: 'image/svg+xml;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'pulsepoll-qr.svg';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  return <>
+    <section className="share-section">
+      <div className="share-heading"><div><p className="eyebrow">Share poll</p><h2>Invite people to vote</h2></div></div>
+      <div className="share-controls">
+        <input readOnly aria-label="Poll share link" value={shareUrl} />
+        <div className="share-actions">
+          <button type="button" className="secondary" onClick={onCopy}>Copy link</button>
+          <button type="button" className="secondary" onClick={() => setIsOpen(true)}>Show QR code</button>
+        </div>
+      </div>
+    </section>
+    {isOpen && <div className="modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setIsOpen(false); }}>
+      <section className="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-title">
+        <div className="qr-modal-heading">
+          <div><p className="eyebrow">Share poll</p><h2 id="qr-title">QR Code</h2></div>
+          <button type="button" className="icon-button modal-close" aria-label="Close QR code" onClick={() => setIsOpen(false)}>×</button>
+        </div>
+        <div className="qr-code" ref={qrRef}><QRCode value={shareUrl} size={220} /></div>
+        <p className="qr-caption">Scan to vote instantly</p>
+        <a className="qr-url" href={shareUrl}>{shareUrl}</a>
+        <button type="button" className="btn download-qr" onClick={downloadQr}>Download QR</button>
+      </section>
+    </div>}
+  </>;
+}
+
+function formatPollDate(value) {
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
 }
 
 function Poll() {
@@ -158,6 +215,8 @@ function Poll() {
   const [snapshot, setSnapshot] = useState({ results: [], totalVotes: 0 });
   const [viewers, setViewers] = useState(0);
   const [message, setMessage] = useState('');
+  const [toast, setToast] = useState(null);
+  const toastTimers = useRef([]);
   const [live, setLive] = useState(false);
   useEffect(() => {
     let socket;
@@ -195,6 +254,23 @@ function Poll() {
     checkExpiry();
     return () => clearInterval(timer);
   }, [id, poll?.expiresAt, poll?.status]);
+  useEffect(() => () => toastTimers.current.forEach(clearTimeout), []);
+  function showCopiedToast() {
+    toastTimers.current.forEach(clearTimeout);
+    setToast({ leaving: false });
+    toastTimers.current = [
+      setTimeout(() => setToast(current => current ? { leaving: true } : current), 1700),
+      setTimeout(() => setToast(null), 2000)
+    ];
+  }
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(`${location.origin}/poll/${id}`);
+      showCopiedToast();
+    } catch {
+      setMessage('Could not copy the link. Please copy the URL manually.');
+    }
+  }
   async function vote(optionId) {
     try {
       const result = await request(`/polls/${id}/votes`, { method: 'POST', body: JSON.stringify({ optionId, voterId: getVoterId() }) });
@@ -214,24 +290,35 @@ function Poll() {
   }
   if (!poll) return <p className="muted">Loading poll…</p>;
   const shareUrl = `${location.origin}/poll/${id}`;
-  const chartData = poll.options.map(option => ({ name: option.text, count: snapshot.results.find(result => result.optionId === option.id)?.count || 0 }));
   return <>
-    <div className="poll-toolbar"><span className="connection"><i className={live ? 'dot on' : 'dot'} />{live ? 'Live' : 'Connecting'}</span><span className="viewer-count">{viewers} viewing</span></div>
+    <div className="poll-toolbar"><span className="connection"><i className={live ? 'dot on' : 'dot'} />{live ? 'Live' : 'Connecting'}</span><span className="viewer-count"><i className="viewer-pulse" />{viewers} Viewers Online</span></div>
     <div className="poll-layout">
       <section className="panel poll-panel">
-        <span className={`status ${poll.status}`}>{poll.status}</span>
+        <div className="poll-title-row"><span className={`status ${poll.status}`}>{poll.status}</span></div>
         <h1>{poll.question}</h1>
-        {poll.expiresAt && <p className="muted">Closes {new Date(poll.expiresAt).toLocaleString()}</p>}
+        <div className="poll-meta">
+          <span>Created by <strong>{poll.creatorName || 'Poll creator'}</strong></span>
+          {poll.createdAt && <span>Created {formatPollDate(poll.createdAt)}</span>}
+          {poll.expiresAt && <span>Expires {formatPollDate(poll.expiresAt)}</span>}
+        </div>
         {message && <p className="notice" role="status">{message}</p>}
         <div className="vote-options">{poll.options.map(option => <button className="vote-option" disabled={poll.status !== 'active'} onClick={() => vote(option.id)} key={option.id}>{option.text}<span aria-hidden="true">→</span></button>)}</div>
-        <div className="share-tools"><div><h2>Share poll</h2><p className="muted">Invite people to vote.</p></div><QRCodeSVG value={shareUrl} size={104} bgColor="var(--surface)" fgColor="var(--text)" /></div>
-        <div className="copy-row"><input readOnly aria-label="Poll share link" value={shareUrl} /><button className="secondary" onClick={() => navigator.clipboard.writeText(shareUrl)}>Copy link</button></div>
+        <SharePanel shareUrl={shareUrl} onCopy={copyLink} />
         {localStorage.getItem('token') && poll.status === 'active' && <button className="danger" onClick={closePoll}>Close poll</button>}
       </section>
       <section className="panel results-panel"><div className="section-heading"><div><p className="eyebrow">Audience response</p><h2>Live results</h2></div><strong>{snapshot.totalVotes} votes</strong></div>
-        <div className="chart"><ResponsiveContainer width="100%" height="100%"><BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 12 }}><CartesianGrid stroke="var(--line)" horizontal={false} /><XAxis type="number" allowDecimals={false} tick={{ fill: 'var(--muted)', fontSize: 12 }} /><YAxis dataKey="name" type="category" width={112} tick={{ fill: 'var(--muted)', fontSize: 12 }} /><Tooltip /><Bar dataKey="count" fill="#e35b3f" radius={[0, 4, 4, 0]} /></BarChart></ResponsiveContainer></div>
+        <div className="result-list">{poll.options.map(option => {
+          const count = snapshot.results.find(result => result.optionId === option.id)?.count || 0;
+          const percentage = snapshot.totalVotes ? Math.floor(count * 100 / snapshot.totalVotes) : 0;
+          return <article className="result-option" key={option.id}>
+            <div className="result-heading"><h3>{option.text}</h3><strong>{percentage}%</strong></div>
+            <div className="progress-track" role="progressbar" aria-label={`${option.text} votes`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={percentage}><span className="progress-value" style={{ width: `${percentage}%` }} /></div>
+            <p className="result-count">{count} {count === 1 ? 'vote' : 'votes'}</p>
+          </article>;
+        })}</div>
       </section>
     </div>
+    {toast && <div className={`toast-success${toast.leaving ? ' is-leaving' : ''}`} role="status" aria-live="polite"><span className="toast-icon" aria-hidden="true">✓</span>Link copied successfully</div>}
   </>;
 }
 
