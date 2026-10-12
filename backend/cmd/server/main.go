@@ -43,7 +43,6 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
 			"https://pulse-poll-frontend-six.vercel.app",
-			"https://pulse-poll-frontend-br9jdfqys-regixx.vercel.app",
 		},
 		AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
