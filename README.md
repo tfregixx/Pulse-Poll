@@ -1,177 +1,363 @@
-<h1 align="center">PulsePoll</h1>
+go run ./cmd/server
+<h1 align="center">🚀 PulsePoll</h1>
 
 <div align="center">
 
 **Live polling, with results that move as your audience votes.**
 
-Create a question, share a link or QR code, and follow participation in real time.
+Create polls, share links or QR codes, collect votes, and watch results update in real time.
 
 ![Go](https://img.shields.io/badge/Go-1.23-00ADD8?logo=go&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-Frontend-646CFF?logo=vite&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-Data-47A248?logo=mongodb&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-Realtime-DC382D?logo=redis&logoColor=white)
-
-[Features](#features) · [Quick start](#quick-start) · [Configuration](#configuration) · [Deployment](#deployment)
+![Render](https://img.shields.io/badge/Render-Backend-46E3B7)
+![Vercel](https://img.shields.io/badge/Vercel-Frontend-black?logo=vercel)
 
 </div>
 
 ---
 
-## Overview
+# 🌐 Live Demo
 
-PulsePoll is a full-stack polling app for meetings, classes, events, and any moment when a group needs to decide together. Organizers create and manage polls; anyone with a poll link can vote. Results and viewer counts update live without refreshing.
+### Frontend
+https://pulse-poll-frontend-six.vercel.app
 
-## Problem Statement
+### Backend
+https://pulse-poll-1-fb3p.onrender.com
 
-Build a live polling tool where users can create a poll, share its link, and collect votes from an audience. Everyone watching should see results update in real time as votes arrive, without refreshing the page.
+### Health Check
+https://pulse-poll-1-fb3p.onrender.com/api/health
 
-## Features
+---
 
-| For voters | For organizers | Under the hood |
-| --- | --- | --- |
-| Public poll pages and duplicate-vote checks per browser ID | Authenticated poll creation and management | React, Vite, and a responsive interface |
-| Shareable links and downloadable QR codes | Live vote totals, percentages, and viewer counts | Go and Gin API with WebSocket updates |
-| Real-time result updates | Poll expiration and close controls | MongoDB persistence and Redis Pub/Sub |
-| Clear poll status and creator details | Per-poll and aggregate analytics | Docker Compose for local development |
+# 📖 Overview
 
-## Architecture
+PulsePoll is a full-stack real-time polling application designed for classrooms, meetings, workshops, presentations, and public events.
+
+Users can create polls, share them instantly using links or QR codes, vote from any device, and watch results update in real time without refreshing the page.
+
+---
+
+# ✨ Features
+
+## 🔐 Authentication
+
+- User Signup
+- User Login
+- JWT Authentication
+- Password Hashing with bcrypt
+- Protected Poll Management Routes
+
+## 📊 Poll Management
+
+- Create Polls
+- Multiple Voting Options
+- Poll Expiration Support
+- Manual Poll Closing
+- Poll Creator Attribution
+
+## ⚡ Real-Time Updates
+
+- WebSocket-Based Live Updates
+- Redis Pub/Sub Integration
+- Instant Vote Synchronization
+- Live Viewer Count
+- Poll Status Updates
+
+## 📈 Analytics
+
+- Total Polls
+- Active Polls
+- Total Votes
+- Total Views
+- Per-Poll Statistics
+
+## 🎨 User Experience
+
+- Responsive Design
+- Dark Mode Support
+- QR Code Sharing
+- Copy Link Toast Notifications
+- Percentage-Based Results
+- Mobile-Friendly Interface
+
+---
+
+# 🚀 Extra Features
+
+### ✅ QR Code Sharing
+
+Generate QR codes for every poll so users can instantly access and vote from mobile devices.
+
+### ✅ Percentage-Based Results
+
+Visual result bars display both total votes and percentages for better analysis.
+
+### ✅ Copy Link Feedback
+
+Users receive instant toast notifications when poll links are copied.
+
+### ✅ Poll Creator Information
+
+Displays creator name and poll creation details for transparency.
+
+### ✅ Live Viewer Count
+
+Shows how many users are currently viewing a poll.
+
+### ✅ Real-Time Polling
+
+Results update instantly using Redis Pub/Sub and WebSockets.
+
+---
+
+# 🏗️ System Architecture
 
 ```mermaid
 flowchart LR
-	Voter[Audience] --> UI[React + Vite]
-	Organizer[Poll organizer] --> UI
-	UI -->|REST API| API[Go + Gin]
-	UI <-->|WebSocket| API
-	API -->|Polls, users, votes| DB[(MongoDB)]
-	API <-->|Counters and Pub/Sub| Redis[(Redis)]
-	Redis -->|Vote events| API
+    User[User] --> Frontend[React + Vite]
+    Frontend -->|REST API| Backend[Go + Gin]
+    Frontend <-->|WebSocket| Backend
+    Backend --> MongoDB[(MongoDB Atlas)]
+    Backend <-->|Pub/Sub| Redis[(Redis / Upstash)]
+    Redis --> Backend
 ```
 
-MongoDB is the durable source of truth for users, polls, and votes. Redis keeps live counters and distributes result events; the Go service broadcasts updates to connected poll pages. If cached counters are unavailable, the backend can rebuild them from MongoDB.
+### Architecture Highlights
 
-## Quick Start
+- MongoDB stores users, polls, and votes.
+- Redis manages live counters and Pub/Sub events.
+- WebSockets broadcast changes instantly.
+- Backend automatically rebuilds counters if Redis data is unavailable.
 
-### Docker Compose
+---
 
-**Prerequisites:** Docker Desktop with Docker Compose.
+# 📡 API Endpoints
 
-1. Create the local environment file:
+All REST endpoints are prefixed with:
 
-	```sh
-	cp .env.example .env
-	```
-
-2. Replace `JWT_SECRET` in `.env` with a long, random value.
-3. Start the stack:
-
-	```sh
-	docker compose up --build
-	```
-
-4. Open [http://localhost:5173](http://localhost:5173), create an account, and make a poll.
-5. Open a poll in another browser or device to try voting and live updates.
-
-Stop the stack with `Ctrl+C`. MongoDB and Redis data are stored in Compose volumes.
-
-### Local Services
-
-For a non-Docker setup, run MongoDB and Redis locally first. In separate terminals:
-
-```sh
-cp backend/.env.example backend/.env
-cd backend
-go run ./cmd/server
+```text
+/api
 ```
 
-```sh
-cp frontend/.env.example frontend/.env
-cd frontend
-npm install
-npm run dev
+| Method | Endpoint | Description |
+|----------|-----------|-------------|
+| GET | /health | Health check |
+| POST | /auth/signup | Register account |
+| POST | /auth/login | Login user |
+| POST | /polls | Create poll |
+| GET | /polls/mine | User polls |
+| GET | /polls/:id | Poll details |
+| GET | /polls/:id/results | Poll results |
+| POST | /polls/:id/votes | Submit vote |
+| POST | /polls/:id/close | Close poll |
+| GET | /analytics | Analytics dashboard |
+
+### WebSocket Endpoint
+
+```text
+/ws/polls/:id
 ```
 
-The frontend expects the API at `VITE_API_URL` and the WebSocket endpoint at `VITE_WS_URL`. These values are set in the frontend environment file and are embedded during the Vite build.
+---
 
-> **Local CORS:** The current backend allowlist is configured for the deployed Vercel origin. To use the local frontend, add `http://localhost:5173` to `AllowOrigins` in `backend/cmd/server/main.go`. The `FRONTEND_URL` environment value does not currently configure this middleware.
+# 🛠️ Tech Stack
 
-## Configuration
+## Frontend
 
-| Variable | Used by | Purpose |
-| --- | --- | --- |
-| `PORT` | Backend | HTTP server port; defaults to `8080`. |
-| `MONGO_URI` | Backend | MongoDB connection string. Use a local URI for development or a secured Atlas URI in production. |
-| `MONGO_DB` | Backend | Database name; defaults to `livepoll`. |
-| `REDIS_URL` | Backend | Optional Redis URL. Set this or `REDIS_ADDR`; URL schemes such as `rediss://` can carry TLS settings. |
-| `REDIS_ADDR` | Backend | Redis host and port, for example `localhost:6379`. |
-| `REDIS_PASSWORD` | Backend | Redis password, when required by the provider. |
-| `REDIS_TLS` | Backend | Set to `true` when connecting by address to a Redis service that requires TLS. |
-| `JWT_SECRET` | Backend | Signing secret for authentication tokens. Replace the development value with a strong random secret. |
-| `FRONTEND_URL` | Compose/config | Frontend origin setting. Note that the current CORS middleware uses an explicit origin in `main.go` instead. |
-| `VITE_API_URL` | Frontend | Backend origin, such as `https://your-service.onrender.com`; do not append `/api`. |
-| `VITE_WS_URL` | Frontend | WebSocket origin, such as `wss://your-service.onrender.com`; do not append `/ws`. |
-| `API_PORT`, `WEB_PORT` | Compose | Host ports for the API and frontend containers; defaults to `8080` and `5173`. |
+- React 19
+- Vite
+- React Router
+- WebSocket Client
+- QR Code Generation
 
-## API Reference
+## Backend
 
-All REST endpoints are prefixed with `/api`.
+- Go
+- Gin Framework
+- JWT Authentication
+- bcrypt Password Hashing
 
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `GET` | `/health` | Public | Service health check. |
-| `POST` | `/auth/signup` | Public | Create an account. |
-| `POST` | `/auth/login` | Public | Sign in and receive a token. |
-| `GET` | `/polls/:id` | Public | Read poll details and creator name. |
-| `GET` | `/polls/:id/results` | Public | Read current results. |
-| `POST` | `/polls/:id/votes` | Public | Submit a vote. |
-| `POST` | `/polls` | Authenticated | Create a poll. |
-| `GET` | `/polls/mine` | Authenticated | List your polls. |
-| `GET` | `/analytics` | Authenticated | Read aggregate and per-poll analytics. |
-| `POST` | `/polls/:id/close` | Authenticated | Close a poll you own. |
+## Database
 
-The live WebSocket endpoint is `/ws/polls/:id` (outside the `/api` prefix).
+- MongoDB Atlas
+
+## Realtime Infrastructure
+
+- Redis
+- Redis Pub/Sub
+- WebSockets
 
 ## Deployment
 
-### Backend on Render
+- Vercel (Frontend)
+- Render (Backend)
 
-1. Create a Web Service connected to this repository.
-2. Set the root directory to `backend` and use the repository Dockerfile.
-3. Configure `MONGO_URI`, `MONGO_DB`, `REDIS_URL` or `REDIS_ADDR`, `REDIS_PASSWORD` if required, `REDIS_TLS` if required, and a strong `JWT_SECRET`.
-4. Use `/api/health` as the health-check path.
+---
 
-### Frontend on Vercel
+# ⚙️ Environment Variables
 
-1. Import the repository and set the root directory to `frontend`.
-2. Use the Vite preset and configure `VITE_API_URL` and `VITE_WS_URL` with the public Render service origins.
-3. Deploy, then ensure the backend CORS allowlist includes the deployed Vercel origin.
+## Backend
 
-The SPA rewrite is configured in `frontend/vercel.json`. Vite variables are build-time values, so redeploy the frontend after changing them. If the Vercel project has a different production domain, update the explicit CORS origin in `backend/cmd/server/main.go` before deploying the backend.
+```env
+PORT=10000
 
-## Security Notes
+MONGO_URI=your_mongodb_uri
 
-- Never commit `.env` files or real credentials. Rotate any credential that has been committed or exposed.
-- Use a unique, high-entropy `JWT_SECRET` in every deployed environment.
-- Restrict MongoDB Atlas network access and use TLS-capable Redis endpoints where required. Do not expose database ports publicly.
-- The current WebSocket upgrader accepts connections from any origin. Restrict `CheckOrigin` to trusted origins before relying on origin checks as a security boundary.
-- The current HTTP CORS allowlist is explicit in `backend/cmd/server/main.go`; keep it aligned with the deployed frontend domain.
+MONGO_DB=livepoll
 
-## Development Checks
+REDIS_URL=your_redis_url
 
-Run backend tests:
+JWT_SECRET=your_jwt_secret
 
-```sh
+FRONTEND_URL=https://pulse-poll-frontend-six.vercel.app
+```
+
+## Frontend
+
+```env
+VITE_API_URL=https://pulse-poll-1-fb3p.onrender.com
+
+VITE_WS_URL=wss://pulse-poll-1-fb3p.onrender.com
+```
+
+---
+
+# 🚀 Local Development
+
+## Backend
+
+```bash
 cd backend
-go test ./...
+
+go mod download
+
+go run ./cmd/server
 ```
 
-Build the frontend:
+## Frontend
 
-```sh
+```bash
 cd frontend
-npm ci
-npm run build
+
+npm install
+
+npm run dev
 ```
+
+Frontend URL:
+
+```text
+http://localhost:5173
+```
+
+---
+
+# 🧪 How It Works
+
+### Create Account
+
+- Sign up with email and password
+- Login securely
+
+### Create Poll
+
+Example:
+
+```text
+Which AI tool do you use most?
+```
+
+Options:
+
+```text
+ChatGPT
+Microsoft Copilot
+Claude
+Gemini
+```
+
+### Share Poll
+
+- Copy Link
+- QR Code Sharing
+
+### Vote
+
+- Open poll from another browser/device
+- Cast vote instantly
+- Watch live updates and viewer tracking
+
+---
+
+# 📊 Analytics Dashboard
+
+Poll creators can monitor:
+
+- Total Polls
+- Active Polls
+- Total Votes
+- Total Views
+- Live Viewer Count
+- Per-Poll Engagement Statistics
+
+---
+
+# 🏆 Challenges Faced
+
+The biggest challenge was deploying and integrating multiple cloud services.
+
+Issues encountered included:
+
+- MongoDB Atlas authentication problems
+- Redis connectivity issues
+- API route mismatches
+- CORS configuration errors
+- Frontend-backend integration debugging
+
+These issues were resolved through deployment log analysis, environment variable configuration, backend routing fixes, and cloud service troubleshooting.
+
+---
+
+# 🤖 AI Usage
+
+AI tools such as Microsoft Copilot and ChatGPT were used during development for:
+
+- Understanding deployment errors
+- Debugging configuration issues
+- Reviewing code
+- Learning implementation approaches
+- Troubleshooting cloud services
+
+AI acted as a development and debugging assistant while implementation, deployment, testing, and verification were completed manually.
+
+---
+
+# 🎥 Demo Video
+
+Demo Video:
+
+```text
+PASTE_YOUR_YOUTUBE_OR_GOOGLE_DRIVE_LINK_HERE
+```
+
+---
+
+# 🔗 Links
+
+### GitHub Profile
+https://github.com/tfregixx
+
+### Project Repository
+https://github.com/tfregixx/Pulse-Poll
+
+---
+
+# 📄 License
+
+This project is intended for educational, learning, and portfolio purposes.
 
 
 
