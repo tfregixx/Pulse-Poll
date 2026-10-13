@@ -22,6 +22,10 @@ Create a question, share a link or QR code, and follow participation in real tim
 
 PulsePoll is a full-stack polling app for meetings, classes, events, and any moment when a group needs to decide together. Organizers create and manage polls; anyone with a poll link can vote. Results and viewer counts update live without refreshing.
 
+## Problem Statement
+
+Build a live polling tool where users can create a poll, share its link, and collect votes from an audience. Everyone watching should see results update in real time as votes arrive, without refreshing the page.
+
 ## Features
 
 | For voters | For organizers | Under the hood |

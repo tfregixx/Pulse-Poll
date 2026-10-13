@@ -306,7 +306,7 @@ function Poll() {
         <SharePanel shareUrl={shareUrl} onCopy={copyLink} />
         {localStorage.getItem('token') && poll.status === 'active' && <button className="danger" onClick={closePoll}>Close poll</button>}
       </section>
-      <section className="panel results-panel"><div className="section-heading"><div><p className="eyebrow">Audience response</p><h2>Live results</h2></div><strong>{snapshot.totalVotes} votes</strong></div>
+      {snapshot.totalVotes > 0 && <section className="panel results-panel"><div className="section-heading"><div><p className="eyebrow">Audience response</p><h2>Live results</h2></div><strong>{snapshot.totalVotes} votes</strong></div>
         <div className="result-list">{poll.options.map(option => {
           const count = snapshot.results.find(result => result.optionId === option.id)?.count || 0;
           const percentage = snapshot.totalVotes ? Math.floor(count * 100 / snapshot.totalVotes) : 0;
@@ -316,7 +316,7 @@ function Poll() {
             <p className="result-count">{count} {count === 1 ? 'vote' : 'votes'}</p>
           </article>;
         })}</div>
-      </section>
+      </section>}
     </div>
     {toast && <div className={`toast-success${toast.leaving ? ' is-leaving' : ''}`} role="status" aria-live="polite"><span className="toast-icon" aria-hidden="true">✓</span>Link copied successfully</div>}
   </>;
