@@ -1,4 +1,3 @@
-go run ./cmd/server
 <h1 align="center">🚀 PulsePoll</h1>
 
 <div align="center">
