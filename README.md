@@ -339,9 +339,8 @@ AI acted as a development and debugging assistant while implementation, deployme
 
 Demo Video:
 
-```text
-PASTE_YOUR_YOUTUBE_OR_GOOGLE_DRIVE_LINK_HERE
-```
+https://drive.google.com/file/d/1XTDWxEZaoyrtpE1Z--IdZ__eY8hiCBXX/view?usp=drive_link
+
 
 ---
 
